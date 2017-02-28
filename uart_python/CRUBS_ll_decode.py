@@ -13,14 +13,26 @@ Created on Wed Jan 18 10:23:50 2017
 char_table=[]
 int_table=[]
 short_table=[]
-save_table=[]
+float_table=[]
 
 b_int = 32
 b_char = 8
 b_short = 16
+
+ch_mask = 0
+sht_mask = 1
+int_mask = 2
+flt_mask = 3
+
+byte_mask = 255
+flt_coef = 1000
+
 size_int = 6
 size_char = 3
 size_short = 4
+
+start_b = 252
+stop_b = 244
 #-----------------------------------------------------------------------------
 # function two's complement
 #-----------------------------------------------------------------------------
@@ -33,10 +45,12 @@ def char_to_byte(trame):
         trame[i]=ord(trame[i])
     return trame
     
+def checksum(data):
+    return(sum(data[:]) & byte_mask)
 #-----------------------------------------------------------------------------
 #reading functions
 #-----------------------------------------------------------------------------
-
+    
 #read ca char with the protocole CRUBS_ll
 def read_char(data,adresse,signe):
     trame = char_to_byte(data)
@@ -92,5 +106,84 @@ def read_int(data,adresse,signe):
 #-----------------------------------------------------------------------------
 #     sending function
 #-----------------------------------------------------------------------------
-def send_pid():
-    print("hello pid")
+#function to add the start/stop byte
+def ss_byte(data):
+    data.append(stop_b)
+    data.insert(0,start_b)
+
+# function to send a char-----------------------------------------------------
+def send_char(data,adresse,char_data):
+    char_data[:]=[] #on nettoie
+    #ajout du bit adresse signe type
+    char_data.append(adresse)
+    if(data<0):
+        char_data[0]=(char_data[0]<<1)+1
+    else:
+        char_data[0]=char_data[0]<<1
+    char_data[0]=(char_data[0]<<2)+ch_mask
+    #envoi
+    char_data.append(data)
+    char_data.append(checksum(char_data[:]))
+    ss_byte(char_data) #ajout start/stop byte
+
+# function to send a short----------------------------------------------------
+def send_sht(data,adresse,sht_data):
+    sht_data[:]=[]
+    #prepa du bit d'adresse
+    sht_data.append(adresse)
+    if(data<0):
+        sht_data[0]=(sht_data[0]<<1)+1
+    else:
+        sht_data[0] = sht_data[0]<<1
+    sht_data[0]=(sht_data[0]<<2)+sht_mask
+#prepa des datas
+    sht_data.append(data >> 8)
+    sht_data.append(data & byte_mask)
+    sht_data.append(checksum(sht_data[:]))
+#prepa du byte de start
+    ss_byte(sht_data)
+
+#function to send an int------------------------------------------------------
+def send_int(data,adresse,int_data):
+    int_data[:]=[] #on nettoie
+    #ajout du bit adresse signe type
+    int_data.append(adresse)
+    if(data<0):
+        int_data[0]=(int_data[0]<<1)+1
+    else:
+        int_data[0]=int_data[0]<<1
+    int_data[0]=(int_data[0]<<2)+int_mask
+    #envoi
+    int_data.append(data >> 24)
+    int_data.append((data >> 16) & byte_mask)
+    int_data.append((data >> 8) & byte_mask)
+    int_data.append((data & 15) & byte_mask)
+    int_data.append(checksum(int_data[:]))
+    ss_byte(int_data) #ajout start/stop byte
+
+#function to send a float-----------------------------------------------------
+def send_flt(data,adresse,flt_data):
+    flt_data[:]=[]
+        #ajout du bit adresse signe type
+    flt_data.append(adresse)
+    if(data<0):
+        flt_data[0]=(flt_data[0]<<1)+1
+    else:
+        flt_data[0]=flt_data[0]<<1
+    flt_data[0]=(flt_data[0]<<2)+flt_mask
+    
+    #adaptation des données
+    data=int(data*flt_coef)
+    flt_data.append(data >> 24)
+    flt_data.append((data >> 16) & byte_mask)
+    flt_data.append((data >> 8) & byte_mask)
+    flt_data.append((data & 15) & byte_mask)
+    flt_data.append(checksum(flt_data[:]))
+    ss_byte(flt_data) #ajout start/stop byte
+    
+#debug function---------------------------------------------------------------
+def print_list(liste):
+    for i in range(len(liste)):
+        print(bin(liste[i]))
+
+

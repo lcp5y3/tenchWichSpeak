@@ -8,7 +8,7 @@ Ceci est un script temporaire.
 import serial
 import CRUBS_ll_decode as decode
 
-
+save_table=[]
 #function are here
 
 
@@ -39,7 +39,7 @@ def read_trame(trame):
 
 #function to read all input of a port while we haven't recieve the end
 def reception():
-    ser = serial.Serial('/dev/ttyUSB1')
+    ser = serial.Serial('/dev/ttyUSB0')
     res=[]
     i=0
     while (fin(res)):
@@ -60,14 +60,21 @@ def fin(data):
         return False
 
 def send_data(data):
-    ser = serial.Serial('/dev/ttyUSB0')
-    ser.open()
+    ser = serial.Serial('/dev/ttyUSB1')
     for i in range(len(data)):
-        ser.write(data[i])
-
+        ser.write(bytes([data[i]]))
+        print(bytes([data[i]]))
+    ser.close
 #------------------------------------------------------------------------------
 #   debut du programme principal
 #   
 #------------------------------------------------------------------------------
+liste=[]
+liste1=[]
+liste2=[]
+decode.send_sht(11,9,liste)
+decode.send_int(11,1,liste1)
+decode.send_flt(11,12,liste2)
 
+ser = serial.Serial('/dev/ttyUSB1')
 
