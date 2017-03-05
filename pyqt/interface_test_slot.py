@@ -8,7 +8,7 @@
 
 from PyQt4 import QtCore, QtGui
 import CRUBS_ll_decode as decode
-
+import uart as uart
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -102,8 +102,8 @@ class Ui_mainWind(object):
         self.frame.setObjectName(_fromUtf8("frame"))
 
         self.retranslateUi(mainWind)
-        QtCore.QObject.connect(self.exit_button, QtCore.SIGNAL(("clicked()")), mainWind.close)
-        QtCore.QObject.connect(self.send_pid_Button, QtCore.SIGNAL("clicked()"), self.slot_send_pid)        
+        QtCore.QObject.connect(self.exit_button, QtCore.SIGNAL(("clicked()")), mainWind.close)      #exit the programme
+        QtCore.QObject.connect(self.send_pid_Button, QtCore.SIGNAL("clicked()"), self.slot_send_pid)#send pid        
         QtCore.QMetaObject.connectSlotsByName(mainWind)
 
     def retranslateUi(self, mainWind):
@@ -119,6 +119,10 @@ class Ui_mainWind(object):
 
     def slot_send_pid(self):
         decode.send_pid(self.doubleSpinBox_P.value(),self.doubleSpinBox_I.value(),self.doubleSpinBox_D.value())
+        if(self.angle_checkBox==True):
+            adr = 4
+        else:
+            adr = 1
+        print(adr)
         
     def slot_send_data(self):
-        print("hello")

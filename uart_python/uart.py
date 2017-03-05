@@ -10,57 +10,52 @@ import CRUBS_ll_decode as decode
 
 save_table=[]
 #function are here
+def read_trame(port):
+    trame=[]
+    while(!check_end()):#code du check à faire chef
+        if(port.inWaiting):
+            trame.append(port.read())
+            if(trame[-1]==stop_b):
+                #mettre ici la lecture
 
 
-
-#read all the data which are input
-def read_trame(trame):
+#read all the data which are input--------------------------------------------
+def read_trame_type(trame):
     while len(trame)!=0:
      #recupération du byte de référnece   
-        reference = ord(trame[0])
+        reference = ord(trame[1])
         adresse = reference >> 3
         data_type = reference & 3
         signe = (reference >>2) & 1
-    
     #fin
         print(adresse, data_type, signe)        #debug
         if(data_type==0):                     #send a char 
             print("data type char")
             decode.read_char(trame[:3],adresse,signe)
             del trame[:3]                   #delete this part of the lsit
-            
+        elif(data_type==1):                   #send an int
+            decode.read_sht(trame[:4],adresse,signe)
+            del trame[:6]   
         elif(data_type==2):                   #send an int
             decode.read_int(trame[:6],adresse,signe)
             del trame[:6]   
+        elif(data_type==3):                   #send an int
+            decode.read_flt(trame[:6],adresse,signe)
+            del trame[:6]              
         else: 
             print("error of type on the trame")
             save_table.append(trame)
             return
 
-#function to read all input of a port while we haven't recieve the end
-def reception():
-    ser = serial.Serial('/dev/ttyUSB0')
-    res=[]
-    i=0
-    while (fin(res)):
-        i+=1
-        res.append(ser.read())
-    read_trame(res[:])
-    ser.close()
+#function to read all input of a port while we haven't recieve the end--------
+def init_uart(port,bdrate):
+    ser = serial.Serial(port)
+    ser.baudrate = bdrate
 #------------------------------------------------------------------------------
 #   function de détection de caractère de fin de transmission
 #------------------------------------------------------------------------------
-def fin(data):
-    if len(data)<3:
-        return True
-    elif (sum(decode.char_to_byte(data[-3:]))!=311 or data[-1]!= b'd'):
-        return True
-    else:
-        del data[-3:]
-        return False
-
 def send_data(data):
-    ser = serial.Serial('/dev/ttyUSB1')
+    ser = serial.Serial('/dev/ttyUSB0')
     for i in range(len(data)):
         ser.write(bytes([data[i]]))
         print(bytes([data[i]]))
@@ -69,12 +64,13 @@ def send_data(data):
 #   debut du programme principal
 #   
 #------------------------------------------------------------------------------
-liste=[]
-liste1=[]
-liste2=[]
-decode.send_sht(11,9,liste)
-decode.send_int(11,1,liste1)
-decode.send_flt(11,12,liste2)
+pd=[]
+po=[]
+dist=[]
+p=8
+decode.send_flt(p,1,pd)
+decode.send_flt(p/2,7,po)
+decode.send_sht(32000,7,dist)
 
-ser = serial.Serial('/dev/ttyUSB1')
+ser = serial.Serial('/dev/ttyUSB0')
 

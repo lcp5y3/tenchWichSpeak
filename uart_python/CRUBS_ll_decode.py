@@ -51,7 +51,7 @@ def checksum(data):
 #reading functions
 #-----------------------------------------------------------------------------
     
-#read ca char with the protocole CRUBS_ll
+#read ca char with the protocole CRUBS_ll-------------------------------------
 def read_char(data,adresse,signe):
     trame = char_to_byte(data)
     checksum = sum(trame[:size_char-1])
@@ -61,7 +61,7 @@ def read_char(data,adresse,signe):
     else:
         char_table.append(data[1])
 
-#read an short with the protocole CRUBS_ll
+#read an short with the protocole CRUBS_ll-------------------------------------
 def read_short(data,adresse,signe):
     trame = char_to_byte(data)
     checksum = sum(trame[:3])
@@ -81,7 +81,7 @@ def read_short(data,adresse,signe):
         else:
             short_table.append(complementA2(resultat, size_short))
             
-#read an int with the protocole CRUBS_ll
+#read an int with the protocole CRUBS_ll--------------------------------------
 def read_int(data,adresse,signe):
     trame = char_to_byte(data)
     checksum = sum(trame[:5])
@@ -103,6 +103,12 @@ def read_int(data,adresse,signe):
         else:
             int_table.append(complementA2(resultat, b_int))
 
+#function to detect the end of a trame---------------------------------------
+def eot(trame):
+    if(trame == stop_b):
+        return True
+    else: 
+        return False
 #-----------------------------------------------------------------------------
 #     sending function
 #-----------------------------------------------------------------------------
