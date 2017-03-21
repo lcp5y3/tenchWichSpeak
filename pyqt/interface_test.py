@@ -7,9 +7,14 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
-from pyqtgraph import GraphicsLayoutWidget
+
+import pyqtgraph as pyqt
 import CRUBS_ll_decode as decode
 import uart as uart
+import time as time
+import threading as thr
+
+
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
@@ -63,9 +68,12 @@ class Ui_mainWind(object):
         self.label_P.setAlignment(QtCore.Qt.AlignBottom|QtCore.Qt.AlignHCenter)
         self.label_P.setObjectName(_fromUtf8("label_P"))
         self.gridLayout.addWidget(self.label_P, 2, 0, 1, 1)
+        #----------------double spin box i --------------------------------------------
         self.doubleSpinBox_I = QtGui.QDoubleSpinBox(self.reg_pid_frame)
-        self.doubleSpinBox_I.setMinimumSize(QtCore.QSize(0, 20))
+        self.doubleSpinBox_I.setMinimumSize(QtCore.QSize(50, 20))
         self.doubleSpinBox_I.setObjectName(_fromUtf8("doubleSpinBox_I"))
+        self.doubleSpinBox_I.setDecimals(3)
+        #------------------------------------------------------------------------------
         self.gridLayout.addWidget(self.doubleSpinBox_I, 3, 1, 1, 1)
         spacerItem1 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.gridLayout.addItem(spacerItem1, 1, 1, 1, 1)
@@ -88,9 +96,12 @@ class Ui_mainWind(object):
         self.label_I.setAlignment(QtCore.Qt.AlignBottom|QtCore.Qt.AlignHCenter)
         self.label_I.setObjectName(_fromUtf8("label_I"))
         self.gridLayout.addWidget(self.label_I, 2, 1, 1, 1)
+        #----------------double spin box d --------------------------------------------
         self.doubleSpinBox_D = QtGui.QDoubleSpinBox(self.reg_pid_frame)
-        self.doubleSpinBox_D.setMinimumSize(QtCore.QSize(0, 20))
+        self.doubleSpinBox_D.setMinimumSize(QtCore.QSize(50, 20))
         self.doubleSpinBox_D.setObjectName(_fromUtf8("doubleSpinBox_D"))
+        self.doubleSpinBox_D.setDecimals(3)
+        #------------------------------------------------------------------------------
         self.gridLayout.addWidget(self.doubleSpinBox_D, 3, 2, 1, 2)
         self.send_pid_Button = QtGui.QPushButton(self.reg_pid_frame)
         self.send_pid_Button.setObjectName(_fromUtf8("send_pid_Button"))
@@ -106,8 +117,10 @@ class Ui_mainWind(object):
         self.label_D.setObjectName(_fromUtf8("label_D"))
         self.gridLayout.addWidget(self.label_D, 2, 2, 1, 2)
         self.doubleSpinBox_P = QtGui.QDoubleSpinBox(self.reg_pid_frame)
-        self.doubleSpinBox_P.setMinimumSize(QtCore.QSize(0, 20))
+        self.doubleSpinBox_P.setMinimumSize(QtCore.QSize(50, 20))
         self.doubleSpinBox_P.setObjectName(_fromUtf8("doubleSpinBox_P"))
+        self.doubleSpinBox_P.setDecimals(3)
+        #------------------------------------------------------------------------------
         self.gridLayout.addWidget(self.doubleSpinBox_P, 3, 0, 1, 1)
         self.horizontalLayout.addWidget(self.reg_pid_frame)
         spacerItem2 = QtGui.QSpacerItem(10, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
@@ -153,13 +166,20 @@ class Ui_mainWind(object):
         self.send_pos = QtGui.QPushButton(self.position_frame_2)
         self.send_pos.setObjectName(_fromUtf8("send_pos"))
         self.gridLayout_2.addWidget(self.send_pos, 0, 5, 1, 1)
+        #-------------------spin box x ------------------------------------------
         self.spinBox_x = QtGui.QSpinBox(self.position_frame_2)
-        self.spinBox_x.setMinimumSize(QtCore.QSize(50, 20))
+        self.spinBox_x.setMinimumSize(QtCore.QSize(80, 20))
         self.spinBox_x.setObjectName(_fromUtf8("spinBox_x"))
+        self.spinBox_x.setMaximum(500)
+        self.spinBox_x.setMinimum(-500)
+        #-------------------------------------------------------------------------
         self.gridLayout_2.addWidget(self.spinBox_x, 5, 2, 1, 1)
         self.spinBox_y = QtGui.QSpinBox(self.position_frame_2)
-        self.spinBox_y.setMinimumSize(QtCore.QSize(50, 20))
+        self.spinBox_y.setMinimumSize(QtCore.QSize(80, 20))
         self.spinBox_y.setObjectName(_fromUtf8("spinBox_y"))
+        self.spinBox_y.setMaximum(500)
+        self.spinBox_y.setMinimum(-500)
+        #-------------------------------------------------------------------------
         self.gridLayout_2.addWidget(self.spinBox_y, 5, 5, 1, 1)
         self.horizontalLayout.addWidget(self.position_frame_2)
         spacerItem4 = QtGui.QSpacerItem(10, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
@@ -289,9 +309,14 @@ class Ui_mainWind(object):
         self.save_Button.setObjectName(_fromUtf8("save_Button"))
         self.verticalLayout_2.addWidget(self.save_Button)
         self.horizontalLayout_5.addWidget(self.widget)
-        self.graphicsView = GraphicsLayoutWidget(self.frame_recie)
-        self.graphicsView.setObjectName(_fromUtf8("graphicsView"))
-        self.horizontalLayout_5.addWidget(self.graphicsView)
+    #--------------------------------------------------------------------Graph
+        self.graph = pyqt.PlotWidget(self.frame_recie)
+        self.graph.setObjectName(_fromUtf8("graph"))
+        self.horizontalLayout_5.addWidget(self.graph)
+        #self.graph.showGrid(0.1)
+        self.graph.enableAutoRange()
+        self.graph.showButtons()
+    #--------------------------------------------------------------------
         self.verticalLayout.addWidget(self.frame_recie)
         self.frame_2 = QtGui.QFrame(mainWind)
         self.frame_2.setMinimumSize(QtCore.QSize(0, 55))
@@ -354,6 +379,7 @@ class Ui_mainWind(object):
 #personnal creation------------------------------------------------------------------------------------
         QtCore.QObject.connect(self.send_pid_Button, QtCore.SIGNAL("clicked()"),self.slot_send_pid)
         QtCore.QObject.connect(self.start_Button, QtCore.SIGNAL("clicked()"), self.slot_recup_data)
+        QtCore.QObject.connect(self.connect_pushButton, QtCore.SIGNAL("clicked()"), self.slot_uart_connection)
 #------------------------------------------------------------------------------------------------------
         QtCore.QMetaObject.connectSlotsByName(mainWind)
 
@@ -367,21 +393,52 @@ class Ui_mainWind(object):
         #envoi des données
         data = []    
         decode.send_flt(self.doubleSpinBox_P.value(),adr,data)
-        uart.send_data(data)
+        uart.send_data(data,uart.port)
         decode.send_flt(self.doubleSpinBox_I.value(),adr+1,data)
-        uart.send_data(data)
+        uart.send_data(data,uart.port)
         decode.send_flt(self.doubleSpinBox_D.value(),adr+2,data)
-        uart.send_data(data)
-    
+        uart.send_data(data,uart.port)
+#graphic function
     def slot_recup_data(self):
         data=[]
+        decode.clear()
+        uart.stop_reading = 0
         decode.send_sht(self.spinBox_x.value(),7,data)#correspond a la commande en distance
-        uart.send_data(data)
+        uart.send_data(data,uart.port)
         decode.send_sht(self.spinBox_y.value(),8,data)#correspond a la commande en orientation
-        uart.send_data(data)
-        while(self.stop_Button.isChecked()==False):
-            a=1
-                
+        uart.send_data(data,uart.port)
+        lecture = uart.read_uart(uart.port)
+        decode.send_char(1,1,data)
+        uart.send_data(data,uart.port)
+       # disp = thr.Thread(target = affichage, args = (self,lecture,decode.distance))
+        lecture.start()
+       # disp.start()
+        lecture.join()
+
+        self.graph.clear()
+        decode.base_temps(len(decode.distance))
+        self.graph.plot(decode.temps[:len(decode.distance)], decode.distance)  
+       # disp.join()
+        #decode.send_char(0,1,data)
+        #uart.send_data(data,uart.port)
+    
+ 
+
+#connection at uart
+    def slot_uart_connection(self):
+        if(uart.port.isOpen()==False):
+            uart.port = uart.init_uart(self.lineEdit_portcom.text(),self.lineEdit_baud_rate.text())
+            if uart.port != 0:
+                self.connect_pushButton.setStyleSheet("QPushButton {background: green}")
+                self.connect_pushButton.setText("connected")
+            else:
+                self.connect_pushButton.setStyleSheet("QPushButton {background: red}")
+        else:
+            uart.port.close()
+            uart.port.__exit__
+            self.connect_pushButton.setStyleSheet("QPushButton {background: red}")
+            self.connect_pushButton.setText("unconnected")
+            
 #--------------------------------------------------------------------------
     def retranslateUi(self, mainWind):
         mainWind.setWindowTitle(_translate("mainWind", "CRUBS la tanche qui parle", None))
@@ -412,7 +469,22 @@ class Ui_mainWind(object):
         self.stop_Button.setText(_translate("mainWind", "Stop", None))
         self.save_Button.setText(_translate("mainWind", "save_data", None))
         self.exit_button.setText(_translate("mainWind", "exit", None))
-        self.connect_pushButton.setText(_translate("mainWind", "connect", None))
+        #---------------------------------------------------------------------------
+        self.connect_pushButton.setText(_translate("mainWind", "unconnected", None))
+        self.connect_pushButton.setStyleSheet("QPushButton {background: red}")
+        #-------------------------------------------------------------------------------
         self.lineEdit_baud_rate.setText(_translate("mainWind", "9600", None))
         self.lineEdit_portcom.setText(_translate("mainWind", "/dev/ttyUSB", None))
 
+def affichage(fenetre,thread_lecture,dist):
+    decode.clear()
+    fenetre.graph.clear()
+    while(thread_lecture.is_alive()):
+        uart.mutex.acquire()
+        try:
+            fenetre.graph.plot(decode.temps[:len(dist)], dist)  
+        except: 
+            print("error affichage")
+        finally:
+            uart.mutex.release()
+            time.sleep(0.1) 

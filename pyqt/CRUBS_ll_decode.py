@@ -9,15 +9,30 @@ Created on Wed Jan 18 10:23:50 2017
 #   file of function which allow to decode data from uart protocole 
 #   CRUBS_ll
 #-----------------------------------------------------------------------------
-#define and other prerocessing are here
-char_table=[]
-int_table=[]
-short_table=[]
-float_table=[]
 
+#----------------------short--------------------------------------------------
+distance=[]
+angle=[]
+temps=[]
+#--------------------------float----------------------------------------------
+p_dist=0
+i_dist=0
+d_dist=0
+
+p_ang=0
+i_ang=0
+d_ang=0
+#------------var de sauvegarde de data -------------------------------------
+char_table=[0,1,2,3,4,5,6]
+int_table=[(),()]
+short_table=[0,1,2,3,4,5,6,7,8,distance,angle]
+flt_table=[0,1,2,3,p_dist,i_dist,d_dist,7,8,9,p_ang,i_ang,d_ang]
+
+#----------------var de paramètrage------------------------------------------
 b_int = 32
 b_char = 8
 b_short = 16
+b_flt = 32
 
 ch_mask = 0
 sht_mask = 1
@@ -43,30 +58,38 @@ def complementA2(variable, nb_bit):
 def char_to_byte(trame):
     for i in range(len(trame)):
         trame[i]=ord(trame[i])
-    return trame
+#    return trame
     
 def checksum(data):
     return(sum(data[:]) & byte_mask)
+
+def base_temps(longueur):
+    bt = 0.01
+    temps[:]=[]
+    for i in range(longueur):
+        temps.append(bt*(1+i))
+
+def clear():
+        distance[:]=[]
+        temps[:]=[]
+        angle[:]=[]
 #-----------------------------------------------------------------------------
 #reading functions
 #-----------------------------------------------------------------------------
     
 #read ca char with the protocole CRUBS_ll-------------------------------------
-def read_char(data,adresse,signe):
-    trame = char_to_byte(data)
+def read_char(trame,adresse,signe):
     checksum = sum(trame[:size_char-1])
-    if((checksum&0x000000ff)!=data[size_char]):
+    if((checksum&0x000000ff)!=trame[size_char]):
         print("error of checksum")
         exit
     else:
-        char_table.append(data[1])
+        char_table[adresse].append(trame[1])
 
 #read an short with the protocole CRUBS_ll-------------------------------------
-def read_short(data,adresse,signe):
-    trame = char_to_byte(data)
+def read_sht(trame,adresse,signe):
     checksum = sum(trame[:3])
-    print(trame, (checksum & 0x000000ff))
-    if((checksum & 0x000000ff)!=data[3]):
+    if((checksum & 0x000000ff)!=trame[3]):
         print("error of checksum")
         exit
     else:
@@ -74,40 +97,64 @@ def read_short(data,adresse,signe):
         del trame[0]
         resultat =0
         for i in range(len(trame)):
-                resultat += trame[i]
                 resultat = resultat <<8
+                resultat += trame[i]
+                
         if(signe == 0):
-            short_table.append(resultat)
+            short_table[adresse].append(resultat)
         else:
-            short_table.append(complementA2(resultat, size_short))
+            short_table[adresse].append(complementA2(resultat, size_short))
             
 #read an int with the protocole CRUBS_ll--------------------------------------
-def read_int(data,adresse,signe):
-    trame = char_to_byte(data)
+def read_int(trame,adresse,signe):
     checksum = sum(trame[:5])
-    if((checksum & 0x000000ff)!=data[5]):
+    if((checksum & 0x000000ff)!=trame[5]):
         print("error of checksum")
         exit
     else:
         del trame[0]
         del trame[-1]
         resultat = trame[0]
-        print(resultat)
         del trame[0]
         for i in range(len(trame)):
             resultat = resultat <<8
             resultat += trame[i]
-        print(resultat)
         if(signe == 0):
-            int_table.append(resultat)
+            int_table[adresse].append(resultat)
         else:
-            int_table.append(complementA2(resultat, b_int))
+            int_table[adresse].append(complementA2(resultat, b_int))
+            
+#read an int with the protocole CRUBS_ll--------------------------------------
+def read_flt(data,adresse,signe):
+    checksum = sum(data[:5])
+    if((checksum & 0x000000ff)!=data[5]):
+        print("error of checksum")
+        exit
+    else:
+        del data[0]
+        del data[-1]
+        resultat = data[0]
+        del data[0]
+        for i in range(len(data)):
+            resultat = resultat <<8
+            resultat += data[i]
+        if(signe == 0):
+            flt_table[adresse]=(resultat/flt_coef)
+        else:
+            flt_table[adresse]=(complementA2(resultat, b_flt)/flt_coef)
 
 #function to detect the end of a trame---------------------------------------
 def eot(trame):
     if(trame == stop_b):
         return True
     else: 
+        return False
+def eo_transmit(trame):
+    if(len(trame)>=3):    
+        if(sum(trame[-3:])==311 and trame[-1]==100):
+            print("fin de transmission")
+            return True
+    else:
         return False
 #-----------------------------------------------------------------------------
 #     sending function
@@ -139,6 +186,7 @@ def send_sht(data,adresse,sht_data):
     sht_data.append(adresse)
     if(data<0):
         sht_data[0]=(sht_data[0]<<1)+1
+        data = abs(data)
     else:
         sht_data[0] = sht_data[0]<<1
     sht_data[0]=(sht_data[0]<<2)+sht_mask
