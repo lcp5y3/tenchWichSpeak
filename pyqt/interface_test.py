@@ -7,12 +7,8 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
-
 import pyqtgraph as pyqt
-import CRUBS_ll_decode as decode
-import uart as uart
-import time as time
-import threading as thr
+
 
 
 try:
@@ -375,70 +371,9 @@ class Ui_mainWind(object):
         self.verticalLayout.addWidget(self.frame_2)
 
         self.retranslateUi(mainWind)
-        QtCore.QObject.connect(self.exit_button, QtCore.SIGNAL(_fromUtf8("clicked()")), mainWind.close)
-#personnal creation------------------------------------------------------------------------------------
-        QtCore.QObject.connect(self.send_pid_Button, QtCore.SIGNAL("clicked()"),self.slot_send_pid)
-        QtCore.QObject.connect(self.start_Button, QtCore.SIGNAL("clicked()"), self.slot_recup_data)
-        QtCore.QObject.connect(self.connect_pushButton, QtCore.SIGNAL("clicked()"), self.slot_uart_connection)
 #------------------------------------------------------------------------------------------------------
         QtCore.QMetaObject.connectSlotsByName(mainWind)
 
-#personnal slot------------------------------------------------------------------------------------------
-#function to send pid
-    def slot_send_pid(self):
-        if(self.angle_checkBox.isChecked()):
-            adr = 4
-        else:
-            adr = 1
-        #envoi des données
-        data = []    
-        decode.send_flt(self.doubleSpinBox_P.value(),adr,data)
-        uart.send_data(data,uart.port)
-        decode.send_flt(self.doubleSpinBox_I.value(),adr+1,data)
-        uart.send_data(data,uart.port)
-        decode.send_flt(self.doubleSpinBox_D.value(),adr+2,data)
-        uart.send_data(data,uart.port)
-#graphic function
-    def slot_recup_data(self):
-        data=[]
-        decode.clear()
-        uart.stop_reading = 0
-        decode.send_sht(self.spinBox_x.value(),7,data)#correspond a la commande en distance
-        uart.send_data(data,uart.port)
-        decode.send_sht(self.spinBox_y.value(),8,data)#correspond a la commande en orientation
-        uart.send_data(data,uart.port)
-        lecture = uart.read_uart(uart.port)
-        decode.send_char(1,1,data)
-        uart.send_data(data,uart.port)
-       # disp = thr.Thread(target = affichage, args = (self,lecture,decode.distance))
-        lecture.start()
-       # disp.start()
-        lecture.join()
-
-        self.graph.clear()
-        decode.base_temps(len(decode.distance))
-        self.graph.plot(decode.temps[:len(decode.distance)], decode.distance)  
-       # disp.join()
-        #decode.send_char(0,1,data)
-        #uart.send_data(data,uart.port)
-    
- 
-
-#connection at uart
-    def slot_uart_connection(self):
-        if(uart.port.isOpen()==False):
-            uart.port = uart.init_uart(self.lineEdit_portcom.text(),self.lineEdit_baud_rate.text())
-            if uart.port != 0:
-                self.connect_pushButton.setStyleSheet("QPushButton {background: green}")
-                self.connect_pushButton.setText("connected")
-            else:
-                self.connect_pushButton.setStyleSheet("QPushButton {background: red}")
-        else:
-            uart.port.close()
-            uart.port.__exit__
-            self.connect_pushButton.setStyleSheet("QPushButton {background: red}")
-            self.connect_pushButton.setText("unconnected")
-            
 #--------------------------------------------------------------------------
     def retranslateUi(self, mainWind):
         mainWind.setWindowTitle(_translate("mainWind", "CRUBS la tanche qui parle", None))
@@ -476,15 +411,3 @@ class Ui_mainWind(object):
         self.lineEdit_baud_rate.setText(_translate("mainWind", "9600", None))
         self.lineEdit_portcom.setText(_translate("mainWind", "/dev/ttyUSB", None))
 
-def affichage(fenetre,thread_lecture,dist):
-    decode.clear()
-    fenetre.graph.clear()
-    while(thread_lecture.is_alive()):
-        uart.mutex.acquire()
-        try:
-            fenetre.graph.plot(decode.temps[:len(dist)], dist)  
-        except: 
-            print("error affichage")
-        finally:
-            uart.mutex.release()
-            time.sleep(0.1) 
