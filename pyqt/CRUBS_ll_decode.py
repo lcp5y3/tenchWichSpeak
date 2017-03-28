@@ -78,23 +78,11 @@ def clear():
 #-----------------------------------------------------------------------------
     
 #read ca char with the protocole CRUBS_ll-------------------------------------
-def read_char(trame,adresse,signe):
-    checksum = sum(trame[:size_char-1])
-    if((checksum&0x000000ff)!=trame[size_char]):
-        print("error of checksum")
-        exit
-    else:
+def read_char(trame,adresse,signe): # reste le signe a regardr ici
         char_table[adresse].append(trame[1])
 
 #read an short with the protocole CRUBS_ll-------------------------------------
 def read_sht(trame,adresse,signe):
-    checksum = sum(trame[:3])
-    if((checksum & 0x000000ff)!=trame[3]):
-        print("error of checksum")
-        exit
-    else:
-        del trame[-1]
-        del trame[0]
         resultat =0
         for i in range(len(trame)):
                 resultat = resultat <<8
@@ -107,15 +95,7 @@ def read_sht(trame,adresse,signe):
             
 #read an int with the protocole CRUBS_ll--------------------------------------
 def read_int(trame,adresse,signe):
-    checksum = sum(trame[:5])
-    if((checksum & 0x000000ff)!=trame[5]):
-        print("error of checksum")
-        exit
-    else:
-        del trame[0]
-        del trame[-1]
-        resultat = trame[0]
-        del trame[0]
+        resultat = 0
         for i in range(len(trame)):
             resultat = resultat <<8
             resultat += trame[i]
@@ -126,15 +106,7 @@ def read_int(trame,adresse,signe):
             
 #read an int with the protocole CRUBS_ll--------------------------------------
 def read_flt(data,adresse,signe):
-    checksum = sum(data[:5])
-    if((checksum & 0x000000ff)!=data[5]):
-        print("error of checksum")
-        exit
-    else:
-        del data[0]
-        del data[-1]
-        resultat = data[0]
-        del data[0]
+        resultat = 0
         for i in range(len(data)):
             resultat = resultat <<8
             resultat += data[i]
@@ -149,6 +121,7 @@ def eot(trame):
         return True
     else: 
         return False
+        
 def eo_transmit(trame):
     if(len(trame)>=3):    
         if(sum(trame[-3:])==311 and trame[-1]==100):

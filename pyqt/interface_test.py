@@ -306,12 +306,7 @@ class Ui_mainWind(object):
         self.verticalLayout_2.addWidget(self.save_Button)
         self.horizontalLayout_5.addWidget(self.widget)
     #--------------------------------------------------------------------Graph
-        self.graph = pyqt.PlotWidget(self.frame_recie)
-        self.graph.setObjectName(_fromUtf8("graph"))
-        self.horizontalLayout_5.addWidget(self.graph)
-        #self.graph.showGrid(0.1)
-        self.graph.enableAutoRange()
-        self.graph.showButtons()
+
     #--------------------------------------------------------------------
         self.verticalLayout.addWidget(self.frame_recie)
         self.frame_2 = QtGui.QFrame(mainWind)

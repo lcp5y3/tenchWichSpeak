@@ -4,11 +4,31 @@
 import sys
 from PyQt4.QtCore import*
 from PyQt4.QtGui import*
+import pyqtgraph as pyqt
+
 from interface_test import Ui_mainWind
 
 import CRUBS_ll_decode as decode
 import uart as uart
-
+  
+class plot_widget(QThread):
+    def __init__(self,graph,thread):
+        QThread.__init__(self)
+        self.graphi=graph
+        self.thread=thread
+    
+    def run(self):
+        while(self.thread.isRunning()):
+            uart.mutex.lock()
+            self.graphi.clear()
+            decode.base_temps(len(decode.distance))
+            #self.graphi.plot([0,1,2,3,4,5],[4,5,1,2,0,3])#decode.temps,decode.distance)
+            uart.mutex.unlock()
+            self.sleep(1)
+        
+        print("fini pourl'affichage")
+        self.quit()
+            
 class robot_reg_app(QGroupBox):
     
     def __init__(self, parent=None):
@@ -21,7 +41,14 @@ class robot_reg_app(QGroupBox):
         self.ui.send_pid_Button.clicked.connect(self.send_pid)
         self.ui.start_Button.clicked.connect(self.read_data)
         self.ui.connect_pushButton.clicked.connect(self.uart_connection)
-
+        
+        self.ui.graph = pyqt.PlotWidget(self.ui.frame_recie)
+        self.ui.graph.setObjectName("graph")
+        self.ui.horizontalLayout_5.addWidget(self.ui.graph)
+        self.ui.graph.showGrid(0.1)
+        self.ui.graph.enableAutoRange()
+        self.ui.graph.showButtons()
+        
     def createWidgets(self):
         self.ui = Ui_mainWind()
         self.ui.setupUi(self)
@@ -52,21 +79,33 @@ class robot_reg_app(QGroupBox):
         uart.send_data(data,uart.port)
         decode.send_sht(self.ui.spinBox_y.value(),8,data)#correspond a la commande en orientation
         uart.send_data(data,uart.port)
+        
         self.lecture = uart.read_uart(uart.port)
+        self.graphic = plot_widget(self.ui.graph,self.lecture)
+        #self.lecture.setPriority(3)
+        #self.graphic.setPriority(3)
+        
+        #self.connect(self.ui.stop_Button,SIGNAL("clicked()"),self.lecture.quit())
         self.connect(self.ui.stop_Button,SIGNAL("clicked()"),self.lecture.stop)
+        
         decode.send_char(1,1,data)
         uart.send_data(data,uart.port)
+        
         self.lecture.start()
-        self.ui.graph.clear()
-        decode.base_temps(len(decode.distance))
-        self.ui.graph.plot(decode.temps[:len(decode.distance)], decode.distance)  
+        self.graphic.start()
+        
+
     #==========================================================================
     # function to plot data from uart using QThread
     #==========================================================================
-    def stop_read(self,thr):
-        aaa
+    def stop_read(self,thr_r,thr_pl):
+        print("ça rentre")
+ 
         
- #connection at uart
+
+    #==========================================================================       
+    #connection at uart
+    #==========================================================================
     def uart_connection(self):
         if(uart.port.isOpen()==False):
             uart.port = uart.init_uart(self.ui.lineEdit_portcom.text(),self.ui.lineEdit_baud_rate.text())
@@ -86,17 +125,4 @@ if __name__ == "__main__":
 	app = QApplication(sys.argv)
 	myapp = robot_reg_app()
 	myapp.show()
-	sys.exit(app.exec())
-
-def affichage(fenetre,thread_lecture,dist):
-    decode.clear()
-    fenetre.graph.clear()
-    while(thread_lecture.is_alive()):
-        uart.mutex.acquire()
-        try:
-            fenetre.graph.plot(decode.temps[:len(dist)], dist)  
-        except: 
-            print("error affichage")
-        finally:
-            uart.mutex.release()
-            time.sleep(0.1) 
+	sys.exit(app.exec()) 
