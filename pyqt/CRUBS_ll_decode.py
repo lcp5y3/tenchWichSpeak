@@ -29,6 +29,7 @@ short_table=[0,1,2,3,4,5,6,7,8,distance,angle]
 flt_table=[0,1,2,3,p_dist,i_dist,d_dist,7,8,9,p_ang,i_ang,d_ang]
 
 #----------------var de paramètrage------------------------------------------
+pdt = 0.01      #pas de temps pour l'affichage du temps
 b_int = 32
 b_char = 8
 b_short = 16

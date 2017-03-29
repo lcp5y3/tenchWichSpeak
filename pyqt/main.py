@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import numpy as np
 from PyQt4.QtCore import*
 from PyQt4.QtGui import*
 import pyqtgraph as pyqt
@@ -10,24 +11,7 @@ from interface_test import Ui_mainWind
 
 import CRUBS_ll_decode as decode
 import uart as uart
-  
-class plot_widget(QThread):
-    def __init__(self,graph,thread):
-        QThread.__init__(self)
-        self.graphi=graph
-        self.thread=thread
-    
-    def run(self):
-        while(self.thread.isRunning()):
-            uart.mutex.lock()
-            self.graphi.clear()
-            decode.base_temps(len(decode.distance))
-            #self.graphi.plot([0,1,2,3,4,5],[4,5,1,2,0,3])#decode.temps,decode.distance)
-            uart.mutex.unlock()
-            self.sleep(1)
-        
-        print("fini pourl'affichage")
-        self.quit()
+
             
 class robot_reg_app(QGroupBox):
     
@@ -74,6 +58,7 @@ class robot_reg_app(QGroupBox):
     def read_data(self):
         data=[]
         decode.clear()
+        #envoi de cmd de distance et orientation : amener à disparaitre
         uart.stop_reading = 0
         decode.send_sht(self.ui.spinBox_x.value(),7,data)#correspond a la commande en distance
         uart.send_data(data,uart.port)
@@ -81,19 +66,26 @@ class robot_reg_app(QGroupBox):
         uart.send_data(data,uart.port)
         
         self.lecture = uart.read_uart(uart.port)
-        self.graphic = plot_widget(self.ui.graph,self.lecture)
-        #self.lecture.setPriority(3)
-        #self.graphic.setPriority(3)
-        
-        #self.connect(self.ui.stop_Button,SIGNAL("clicked()"),self.lecture.quit())
+        #decla d'un timer en parrallele pour le rafraichissement de l'affichage ça marche au poil
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_gr)
+
         self.connect(self.ui.stop_Button,SIGNAL("clicked()"),self.lecture.stop)
         
         decode.send_char(1,1,data)
         uart.send_data(data,uart.port)
         
         self.lecture.start()
-        self.graphic.start()
+        self.timer.start(100)
         
+    def update_gr(self):
+        #print("ça passe")                                      #debug
+        uart.mutex.lock()        
+        distance = decode.distance
+        uart.mutex.unlock()
+        temps = np.arange(0,len(distance)*decode.pdt,decode.pdt)
+        #print(len(temps),len(distance),temps)                      #debug
+        self.ui.graph.plot(temps, distance)#, clear=True)        
 
     #==========================================================================
     # function to plot data from uart using QThread
