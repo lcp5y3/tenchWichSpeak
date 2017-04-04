@@ -52,8 +52,8 @@ stop_b = 244
 #-----------------------------------------------------------------------------
 # function two's complement
 #-----------------------------------------------------------------------------
-def complementA2(variable, nb_bit):
-    return -1*((variable-1)^(pow(2,nb_bit)-1))          # var-1 xor 2puissanceX -1
+def complementA2(variable, nb_byt):
+    return -1*((variable-1)^(pow(2,nb_byt)-1))          # var-1 xor 2puissanceX -1
     
 #transforme char en byte read like int
 def char_to_byte(trame):
@@ -92,7 +92,7 @@ def read_sht(trame,adresse,signe):
         if(signe == 0):
             short_table[adresse].append(resultat)
         else:
-            short_table[adresse].append(complementA2(resultat, size_short))
+            short_table[adresse].append(complementA2(resultat, size_short,))
             
 #read an int with the protocole CRUBS_ll--------------------------------------
 def read_int(trame,adresse,signe):
@@ -103,7 +103,7 @@ def read_int(trame,adresse,signe):
         if(signe == 0):
             int_table[adresse].append(resultat)
         else:
-            int_table[adresse].append(complementA2(resultat, b_int))
+            int_table[adresse].append(complementA2(resultat, b_int,))
             
 #read an int with the protocole CRUBS_ll--------------------------------------
 def read_flt(data,adresse,signe):
@@ -114,7 +114,7 @@ def read_flt(data,adresse,signe):
         if(signe == 0):
             flt_table[adresse]=(resultat/flt_coef)
         else:
-            flt_table[adresse]=(complementA2(resultat, b_flt)/flt_coef)
+            flt_table[adresse]=(complementA2(resultat, b_flt,)/flt_coef)
 
 #function to detect the end of a trame---------------------------------------
 def eot(trame):
@@ -145,6 +145,7 @@ def send_char(data,adresse,char_data):
     char_data.append(adresse)
     if(data<0):
         char_data[0]=(char_data[0]<<1)+1
+        data = complementA2(data,b_char)
     else:
         char_data[0]=char_data[0]<<1
     char_data[0]=(char_data[0]<<2)+ch_mask
@@ -160,7 +161,8 @@ def send_sht(data,adresse,sht_data):
     sht_data.append(adresse)
     if(data<0):
         sht_data[0]=(sht_data[0]<<1)+1
-        data = abs(data)
+        data = complementA2(data,b_short)
+        print(hex(data))                  #debug
     else:
         sht_data[0] = sht_data[0]<<1
     sht_data[0]=(sht_data[0]<<2)+sht_mask
@@ -178,6 +180,7 @@ def send_int(data,adresse,int_data):
     int_data.append(adresse)
     if(data<0):
         int_data[0]=(int_data[0]<<1)+1
+        data = complementA2(data,b_int)
     else:
         int_data[0]=int_data[0]<<1
     int_data[0]=(int_data[0]<<2)+int_mask
@@ -196,10 +199,10 @@ def send_flt(data,adresse,flt_data):
     flt_data.append(adresse)
     if(data<0):
         flt_data[0]=(flt_data[0]<<1)+1
+        data = complementA2(data,b_flt)
     else:
         flt_data[0]=flt_data[0]<<1
     flt_data[0]=(flt_data[0]<<2)+flt_mask
-    
     #adaptation des données
     data=int(data*flt_coef)
     flt_data.append(data >> 24)
