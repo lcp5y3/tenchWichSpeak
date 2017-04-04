@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import time as t
 from PyQt4.QtCore import*
 from PyQt4.QtGui import*
 import pyqtgraph as pyqt
@@ -26,6 +25,7 @@ class robot_reg_app(QGroupBox):
         self.ui.start_Button.clicked.connect(self.read_data)
         self.ui.connect_pushButton.clicked.connect(self.uart_connection)
         self.ui.graph = pyqt.PlotWidget(self.ui.frame_recie)
+        #----------------- set the pyqtgraph
         self.ui.graph.setObjectName("graph")
         self.ui.horizontalLayout_5.addWidget(self.ui.graph)
         self.ui.graph.showGrid(0.1)
@@ -104,11 +104,7 @@ class robot_reg_app(QGroupBox):
         thr_r.terminate()
         thr_r.wait()
         #print("reading thread is running: ",thr_r.isRunning()) #debug        
-        #while(thr_r.isRunning()):
-         #   print("reading thread is running: ",thr_r.isRunning()) #debug
-          #  t.sleep(0.1)
-           # thr_r.quit()
- 
+
     #==========================================================================       
     #connection at uart
     #==========================================================================
@@ -120,6 +116,7 @@ class robot_reg_app(QGroupBox):
                 self.ui.connect_pushButton.setText("connected")
             else:
                 self.ui.connect_pushButton.setStyleSheet("QPushButton {background: red}")
+                uart.port = uart.serial.Serial()        # reinit la var uart
         else:
             uart.port.close()
             uart.port.__exit__
