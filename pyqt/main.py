@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import numpy as np
 from PyQt4.QtCore import*
 from PyQt4.QtGui import*
 import pyqtgraph as pyqt
@@ -11,6 +12,8 @@ from interface_test import Ui_mainWind
 import CRUBS_ll_decode as decode
 import uart as uart
 
+mutex_stop = QMutex()
+mutex_read = QMutex()
             
 class robot_reg_app(QGroupBox):
     
@@ -31,6 +34,8 @@ class robot_reg_app(QGroupBox):
         self.ui.graph.showGrid(0.1)
         self.ui.graph.enableAutoRange()
         self.ui.graph.showButtons()
+        
+        self.first = True
         
     def createWidgets(self):
         self.ui = Ui_mainWind()
@@ -55,28 +60,32 @@ class robot_reg_app(QGroupBox):
     # function to read data from uart using QThread
     #==========================================================================
     def read_data(self):
+        mutex_read.lock()
         print("start to read uart") #debug
         data=[]
         decode.clear()
         #envoi de cmd de distance et orientation : amener à disparaitre
         decode.send_sht(self.ui.spinBox_x.value(),7,data)#correspond a la commande en distance
-        uart.send_data(data,uart.port)
+ #       uart.send_data(data,uart.port)
         decode.send_sht(self.ui.spinBox_y.value(),8,data)#correspond a la commande en orientation
-        uart.send_data(data,uart.port)
-        
-        self.lecture = uart.read_uart(uart.port)
-        #decla d'un timer en parrallele pour le rafraichissement de l'affichage ça marche au poil
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_gr)
-
+#        uart.send_data(data,uart.port)
+        if(self.first==True):
+            self.lecture = uart.read_uart(uart.port)
+            #decla d'un timer en parrallele pour le rafraichissement de l'affichage ça marche au poil
+            self.timer = QTimer()
+            self.timer.timeout.connect(self.update_gr)
+            self.first = False
+            self.ui.stop_Button.clicked.connect(lambda: self.stop_read(self.lecture,self.timer))
+            print("crea des thread")
+            
         self.ui.graph.clear()
         decode.send_char(1,1,data)
+        print("la data que j'envoi est la : ",data)
         uart.send_data(data,uart.port)
                                         #START  the thread
         self.lecture.start()
         self.timer.start(100)
         
-        self.ui.stop_Button.clicked.connect(lambda: self.stop_read(self.lecture,self.timer))
         
     #==========================================================================
     # function to plot data from uart using QThread
@@ -95,7 +104,8 @@ class robot_reg_app(QGroupBox):
     # function to stop to reading and stop the plottin
     #==========================================================================   
     def stop_read(self,thr_r,thr_af):
-        #print("ça rentre",thr_r) #debug
+        print("stop cmd") #debug
+        mutex_stop.lock()
         data=[]
         decode.send_char(0,1,data)
         uart.send_data(data,uart.port)
@@ -103,6 +113,8 @@ class robot_reg_app(QGroupBox):
         #print("reading thread is running: ",thr_r.isRunning()) #debug
         thr_r.terminate()
         thr_r.wait()
+        mutex_stop.unlock()
+        mutex_read.unlock()
         #print("reading thread is running: ",thr_r.isRunning()) #debug        
 
     #==========================================================================       

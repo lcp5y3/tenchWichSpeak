@@ -12,5 +12,5 @@ implemented function :
     - uart connection
     - uart reading and writing 
     - traitement of input data
-    
-    
+	- implementer une fonction de taux d'echec de transmission    
+    - probleme de lecture/ecriture ?!!!
