@@ -14,6 +14,9 @@ Created on Wed Jan 18 10:23:50 2017
 distance=[]
 angle=[]
 temps=[]
+cmd_d=[]
+cmd_a=[]
+theta=[]
 #--------------------------float----------------------------------------------
 p_dist=0
 i_dist=0
@@ -24,9 +27,9 @@ i_ang=0
 d_ang=0
 #------------var de sauvegarde de data -------------------------------------
 char_table=[0,1,2,3,4,5,6]
-int_table=[(),()]
-short_table=[0,1,2,3,4,5,6,7,8,distance,angle]
-flt_table=[0,1,2,3,p_dist,i_dist,d_dist,7,8,9,p_ang,i_ang,d_ang]
+int_table=[0,1,2,distance,angle,cmd_d]
+short_table=[0,1,2,3,4,5,cmd_a]
+flt_table=[0,1,2,3,p_dist,i_dist,d_dist,7,8,9,p_ang,i_ang,d_ang,theta]
 
 #----------------var de paramètrage------------------------------------------
 pdt = 0.01      #pas de temps pour l'affichage du temps
@@ -42,6 +45,7 @@ flt_mask = 3
 
 byte_mask = 255
 flt_coef = 1000
+seuil_max = 1000000000
 
 size_int = 6
 size_char = 3
@@ -74,6 +78,8 @@ def clear():
         distance[:]=[]
         temps[:]=[]
         angle[:]=[]
+        cmd_d[:]=[]
+        theta[:]=[]
 #-----------------------------------------------------------------------------
 #reading functions
 #-----------------------------------------------------------------------------
@@ -92,29 +98,37 @@ def read_sht(trame,adresse,signe):
         if(signe == 0):
             short_table[adresse].append(resultat)
         else:
-            short_table[adresse].append(complementA2(resultat, size_short,))
+            short_table[adresse].append(complementA2(resultat, size_short))
             
 #read an int with the protocole CRUBS_ll--------------------------------------
 def read_int(trame,adresse,signe):
         resultat = 0
         for i in range(len(trame)):
             resultat = resultat <<8
-            resultat += trame[i]
+            resultat += trame[i]   
         if(signe == 0):
             int_table[adresse].append(resultat)
         else:
-            int_table[adresse].append(complementA2(resultat, b_int,))
+            int_table[adresse].append(complementA2(resultat, b_int))
             
 #read an int with the protocole CRUBS_ll--------------------------------------
 def read_flt(data,adresse,signe):
         resultat = 0
+        #print("DEBUG: valeur de la trame dans le read flt ",data)
         for i in range(len(data)):
             resultat = resultat <<8
             resultat += data[i]
         if(signe == 0):
-            flt_table[adresse]=(resultat/flt_coef)
+            if(resultat>seuil_max):
+                exit
+            else:
+                flt_table[adresse].append(resultat/flt_coef)
         else:
-            flt_table[adresse]=(complementA2(resultat, b_flt,)/flt_coef)
+            if(complementA2(resultat, b_flt)>seuil_max):
+                exit
+            else:
+                flt_table[adresse].append(complementA2(resultat, b_flt)/flt_coef)
+        print("DEBUG:  valeur ",flt_table[adresse][-1],"|| adresse: ",adresse)
 
 #function to detect the end of a trame---------------------------------------
 def eot(trame):
