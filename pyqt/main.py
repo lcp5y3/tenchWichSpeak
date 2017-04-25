@@ -178,7 +178,7 @@ class robot_reg_app(QGroupBox):
         #print("timer")
         uart.mutex.lock()                       #mutex to keep your hand on data
         distance = decode.distance
-        commande = decode.cmd_d
+        commande = decode.theta
         #print("DEBUG: valeur de theta lu ",commande)
         temps = np.arange(0,len(distance)*decode.pdt,decode.pdt)
         temps2 = np.arange(0,len(commande)*decode.pdt,decode.pdt)

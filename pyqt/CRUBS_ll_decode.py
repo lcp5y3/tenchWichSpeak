@@ -56,9 +56,9 @@ stop_b = 244
 #-----------------------------------------------------------------------------
 # function two's complement
 #-----------------------------------------------------------------------------
-def complementA2(variable, nb_byt):
-    return -1*((variable-1)^(pow(2,nb_byt)-1))          # var-1 xor 2puissanceX -1
-    
+def complementA2(variable, nb_bit):
+    return -1*((variable-1)^(pow(2,nb_bit)-1))          # var-1 xor 2puissanceX -1
+    #return variable-1-pow(2,nb_bit)
 #transforme char en byte read like int
 def char_to_byte(trame):
     for i in range(len(trame)):
@@ -94,12 +94,13 @@ def read_sht(trame,adresse,signe):
         for i in range(len(trame)):
                 resultat = resultat <<8
                 resultat += trame[i]
-                
+        #print("DEBUG: short signe ",signe," resultat: ",resultat)
         if(signe == 0):
             short_table[adresse].append(resultat)
         else:
-            short_table[adresse].append(complementA2(resultat, size_short))
-            
+            short_table[adresse].append(complementA2(resultat, b_short))
+    
+        #print("DEBUG:  valeur ",short_table[adresse][-1],"|| adresse: ",adresse)
 #read an int with the protocole CRUBS_ll--------------------------------------
 def read_int(trame,adresse,signe):
         resultat = 0
@@ -118,17 +119,12 @@ def read_flt(data,adresse,signe):
         for i in range(len(data)):
             resultat = resultat <<8
             resultat += data[i]
+        #print("DEBUG: float resultat ", resultat)
         if(signe == 0):
-            if(resultat>seuil_max):
-                exit
-            else:
-                flt_table[adresse].append(resultat/flt_coef)
+            flt_table[adresse].append(resultat/flt_coef)
         else:
-            if(complementA2(resultat, b_flt)>seuil_max):
-                exit
-            else:
-                flt_table[adresse].append(complementA2(resultat, b_flt)/flt_coef)
-        print("DEBUG:  valeur ",flt_table[adresse][-1],"|| adresse: ",adresse)
+            flt_table[adresse].append(complementA2(resultat, b_flt)/flt_coef)
+        #print("DEBUG:  valeur ",flt_table[adresse][-1],"|| adresse: ",adresse)
 
 #function to detect the end of a trame---------------------------------------
 def eot(trame):
